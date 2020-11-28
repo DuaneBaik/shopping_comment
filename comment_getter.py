@@ -1,4 +1,5 @@
 import requests
+import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
@@ -35,18 +36,83 @@ class Category:
 
     def url_getter(self):
 
+        global url_truck
+
         if int(self.prod_quan) % 80 == 0 :
             page_no = int(self.prod_quan)//80
         else :
             page_no = int(self.prod_quan)//80 + 1
-        print(self.prod_quan)
+
+        url_truck = []
+
         for i in range(page_no) :
 
             url = "https://search.shopping.naver.com/search/category?catId="+ self.cat_id + "&frm=NVSHCAT&origQuery&pagingIndex="+ str(i + 1) +"&pagingSize=80&productSet=model&query&sort=rel&timestamp=&viewType=list"
 
             driver = webdriver.Chrome('./chromedriver')
             driver.get(url)
-            print(driver.find_element_by_class_name('basicList_item__2XT81').find_element_by_tag_name('a').get_attribute('href'))
+
+            self.scroller(driver)
+
+            ls = driver.find_elements_by_class_name('basicList_item__2XT81')
+
+            for data in ls :
+                url_truck.append(data.find_element_by_css_selector('a').get_attribute('href'))
+
+    def scroller(self,driver):
+
+        scroll_pause_sec = 1
+
+        last_height = driver.execute_script("return document.body.scrollHeight")
+
+        while True:
+
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+            time.sleep(scroll_pause_sec)
+
+            new_height = driver.execute_script("return document.body.scrollHeight")
+
+            if new_height == last_height:
+
+                time.sleep(scroll_pause_sec)
+                new_height = driver.execute_script("return document.body.scrollHeight")
+
+                if new_height == last_height:
+                    break
+
+            last_height = new_height
+
+
+    def comm_getter(self):
+
+        for index in range(int(self.prod_quan)) :
+
+            url = url_truck[index]
+
+            driver = webdriver.Chrome('./chromedriver')
+            driver.get(url)
+
+            self.scroller(driver)
+
+            items = driver.find_element_by_class_name('reviewItems_list_review__1sgcJ').find_elements_by_css_selector('li')
+
+            for prod in items :
+                star = prod.find_element_by_class_name('reviewItems_average__16Ya-').text
+                comm = prod.find_element_by_class_name('reviewItems_text__XIsTc').text
+                img_ls = prod.find_element_by_class_name('reviewItems_review_thumb__CK7I2').find_elements_by_class_name('reviewItems_img_box__2zrNv')
+                img_truck = []
+
+                for img in img_ls :
+
+                    img_truck.append(img.find_element_by_tag_name('img').get_attribute('src'))
+
+                print(star)
+                print(comm)
+                print(img_truck)
+
+
+
 
 def setting() :
 
@@ -63,3 +129,4 @@ new_prod = setting()
 new_prod.check()
 new_prod.max_prod_check()
 new_prod.url_getter()
+new_prod.comm_getter()
