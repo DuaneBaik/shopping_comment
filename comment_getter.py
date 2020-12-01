@@ -137,7 +137,7 @@ class Category:
             file_name = prod_name.replace(" ","_").replace("\\","_").replace("/","_").replace(":","_").replace("*","_").replace("?","_").replace("\"","_").replace("<","_").replace(">","_").replace("|","_")
             f = open(file_name + '.csv' , 'w' , newline='',encoding='utf-8')
             wr = csv.writer(f)
-            wr.writerow(['star_point', 'comment', 'photo'])
+            wr.writerow(['date', 'star_point', 'comment', 'photo'])
             for i in range(comm_page) :
 
                 self.comm_getter_2(driver, 20, wr)
@@ -173,6 +173,7 @@ class Category:
         for prod in range(r):
             img_truck = []
 
+            date = items[prod].find_element_by_class_name('reviewItems_etc_area__2P8i3').find_elements_by_class_name('reviewItems_etc__1YqVF')[2].text
             star = items[prod].find_element_by_class_name('reviewItems_average__16Ya-').text.replace('평점','')
             comm = items[prod].find_element_by_class_name('reviewItems_text__XIsTc').text
             if len(items[prod].find_element_by_class_name("reviewItems_review__1eF8A").find_elements_by_css_selector('div')) == 2:
@@ -182,7 +183,7 @@ class Category:
                 for img in img_ls:
                     img_truck.append(img.find_element_by_tag_name('img').get_attribute('src'))
 
-            writer.writerow([star,comm,img_truck])
+            writer.writerow([date,star,comm,img_truck])
 
 
 
