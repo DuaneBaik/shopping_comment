@@ -38,12 +38,11 @@ class Category:
     def max_comm_check(self, max_comm):
 
         if self.comm_quan == 'all' :
-            return max_comm
+            self.comm_quan = max_comm
         elif int(self.comm_quan) > max_comm :
             print("지정한 후기의 개수가 최대 후기의 개수를 초과하여, 최대개수인 {0}개로 조정됩니다.".format(max_comm))
-            return max_comm
-        else :
-            return self.comm_quan
+            self.comm_quan = max_comm
+
 
     def url_getter(self):
 
@@ -104,10 +103,15 @@ class Category:
     def page_swap(self, driver, page_info):
 
         if page_info == 'next':
+            print("실행1")
+            print(driver.find_element_by_class_name('review_section_review__1hTZD').find_element_by_class_name('pagination_pagination__2M9a4').find_element_by_class_name('pagination_next__3ycRH').text)
             cord = driver.find_element_by_class_name('review_section_review__1hTZD').find_element_by_class_name('pagination_pagination__2M9a4').find_element_by_class_name('pagination_next__3ycRH')
+
         elif page_info > 8 :
+            print("실행2")
             cord = driver.find_element_by_class_name('review_section_review__1hTZD').find_element_by_class_name('pagination_pagination__2M9a4').find_elements_by_css_selector('a')[(page_info + 1) % 10 + 2]
         else :
+            print("실행3")
             cord = driver.find_element_by_class_name('review_section_review__1hTZD').find_element_by_class_name('pagination_pagination__2M9a4').find_elements_by_css_selector('a')[page_info + 1]
 
         driver.execute_script("arguments[0].click();", cord)
@@ -128,14 +132,13 @@ class Category:
                 continue
 
             max_comm = driver.find_element_by_class_name('floatingTab_detail_tab__2T3U7').find_elements_by_css_selector('li')[-2].find_element_by_css_selector('em').text.replace(',','')
-            comm_quan = self.max_comm_check(int(max_comm))
+            self.max_comm_check(int(max_comm))
 
-            comm_page = int(comm_quan) // 20
-            comm_left = int(comm_quan) % 20
+            comm_page = int(self.comm_quan) // 20
+            comm_left = int(self.comm_quan) % 20
 
             prod_name = driver.find_element_by_class_name('top_summary_title__15yAr').find_element_by_tag_name('h2').text
-            file_name = prod_name.replace(" ","_").replace("\\","_").replace("/","_").replace(":","_").replace("*","_").replace("?","_").replace("\"","_").replace("<","_").replace(">","_").replace("|","_")
-            f = open(file_name + '.csv' , 'w' , newline='',encoding='utf-8')
+            f = open(prod_name + '.csv' , 'w' , newline='',encoding='utf-8')
             wr = csv.writer(f)
             wr.writerow(['star_point', 'comment', 'photo'])
             for i in range(comm_page) :
@@ -173,7 +176,7 @@ class Category:
         for prod in range(r):
             img_truck = []
 
-            star = items[prod].find_element_by_class_name('reviewItems_average__16Ya-').text.replace('평점','')
+            star = items[prod].find_element_by_class_name('reviewItems_average__16Ya-').text
             comm = items[prod].find_element_by_class_name('reviewItems_text__XIsTc').text
             if len(items[prod].find_element_by_class_name("reviewItems_review__1eF8A").find_elements_by_css_selector('div')) == 2:
                 img_ls = items[prod].find_element_by_class_name('reviewItems_review_thumb__CK7I2').find_elements_by_class_name(
@@ -182,7 +185,7 @@ class Category:
                 for img in img_ls:
                     img_truck.append(img.find_element_by_tag_name('img').get_attribute('src'))
 
-            writer.writerow([star,comm,img_truck])
+            writer.writerow([star,comm,img_truck.replace('[','')])
 
 
 
