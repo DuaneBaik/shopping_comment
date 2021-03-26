@@ -6,14 +6,16 @@ from selenium import webdriver
 
 class Category:
 
-    def __init__(self,cat_id,prod_quan,comm_quan):
+    def __init__(self,cat_id,prod_quan,comm_quan,min_comm):
 
         self.cat_id = cat_id
         self.prod_quan = prod_quan
         self.comm_quan = comm_quan
+        self.min_comm = min_comm
+
 
     def check(self):
-        print('현재 설정된 카테고리 넘버는 {0}이고, 지정한 상품의 개수는 {1}, 후기의 개수는 {2}입니다.'.format(self.cat_id,self.prod_quan,self.comm_quan))
+        print('현재 설정된 카테고리 넘버는 {0}이고, 지정한 상품의 개수는 {1}, 후기의 개수는 {2}이며, 후기개수 {3}개 미만의 상품은 수집하지 않습니다.'.format(self.cat_id,self.prod_quan,self.comm_quan,self.min_comm))
 
     def max_prod_check(self):
 
@@ -39,6 +41,11 @@ class Category:
 
         if self.comm_quan == 'all' :
             return max_comm
+
+        elif int(self.min_comm) > max_comm :
+            print("후기의 개수가 모자랍니다. 다음 상품으로 건너뜁니다.")
+            return 'lack'
+
         elif int(self.comm_quan) > max_comm :
             print("지정한 후기의 개수가 최대 후기의 개수를 초과하여, 최대개수인 {0}개로 조정됩니다.".format(max_comm))
             return max_comm
@@ -92,6 +99,9 @@ class Category:
                 if new_height == last_height:
                     break
 
+
+
+
             last_height = new_height
 
     def fake_check(self, driver):
@@ -103,15 +113,16 @@ class Category:
 
     def page_swap(self, driver, page_info):
 
+        base_code = driver.find_element_by_class_name('review_section_review__1hTZD').find_element_by_class_name('pagination_pagination__2M9a4')
+
         if page_info == 'next':
-            cord = driver.find_element_by_class_name('review_section_review__1hTZD').find_element_by_class_name('pagination_pagination__2M9a4').find_element_by_class_name('pagination_next__3ycRH')
+            code = base_code.find_element_by_class_name('pagination_next__3ycRH')
         elif page_info > 8 :
-            cord = driver.find_element_by_class_name('review_section_review__1hTZD').find_element_by_class_name('pagination_pagination__2M9a4').find_elements_by_css_selector('a')[(page_info + 1) % 10 + 2]
+            code = base_code.find_elements_by_css_selector('a')[(page_info + 1) % 10 + 2]
         else :
-            cord = driver.find_element_by_class_name('review_section_review__1hTZD').find_element_by_class_name('pagination_pagination__2M9a4').find_elements_by_css_selector('a')[page_info + 1]
+            code = base_code.find_elements_by_css_selector('a')[page_info + 1]
 
-        driver.execute_script("arguments[0].click();", cord)
-
+        driver.execute_script("arguments[0].click();", code)
 
     def comm_getter(self):
 
@@ -130,6 +141,9 @@ class Category:
             max_comm = driver.find_element_by_class_name('floatingTab_detail_tab__2T3U7').find_elements_by_css_selector('li')[-2].find_element_by_css_selector('em').text.replace(',','')
             comm_quan = self.max_comm_check(int(max_comm))
 
+            if comm_quan == 'lack' :
+                continue
+
             comm_page = int(comm_quan) // 20
             comm_left = int(comm_quan) % 20
 
@@ -137,6 +151,7 @@ class Category:
             file_name = prod_name.replace(" ","_").replace("\\","_").replace("/","_").replace(":","_").replace("*","_").replace("?","_").replace("\"","_").replace("<","_").replace(">","_").replace("|","_")
             f = open(file_name + '.csv' , 'w' , newline='',encoding='utf-8')
             wr = csv.writer(f)
+            wr.writerow([driver.find_element_by_class_name('lowestPrice_num__3AlQ-').text])
             wr.writerow(['date', 'star_point', 'comment', 'photo'])
             for i in range(comm_page) :
 
@@ -194,8 +209,9 @@ def setting() :
     cat_id = input("원하는 상품의 카테고리 ID를 입력해주세요. : ") # 원하는 상품의 카테고리 id를 입력받는다
     prod_quan = input("카테고리 내 후기를 긁고싶은 상품의 개수를 입력하세요. 모든 상품을 긁으시려면 all 입력. : ") # 후기를 긁고싶은 상품의 개수를 입력받는다. 입력한 값이 네이버에서 보유한 상품의 개수를 초과할 경우, 자동으로 그 상한에 맞춰진다.
     comm_quan = input("상품별로 얻고싶은 후기의 개수를 입력하세요. 모든 후기를 얻으시려면 all 입력. : ") # 상품별 긁을 후기의 개수를 설정한다.
+    min_comm = input("후기양의 최소치를 설정하십시오. : ") #후기양의 최소치를 설정한다.
 
-    new_prod = Category(cat_id,prod_quan,comm_quan)
+    new_prod = Category(cat_id,prod_quan,comm_quan,min_comm)
 
     return new_prod
 
